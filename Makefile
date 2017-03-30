@@ -1,3 +1,10 @@
+# This will silence the make file, similar to add @
+$(VERBOSE).SILENT:
+
+######################################
+######## Customizable options ########
+######################################
+
 # the name of the builded docker image
 IMAGE_NAME=docker-image
 
@@ -9,16 +16,36 @@ CONTAINER_NAME=docker-base
 # 'root@Docker:#' inside the conainer
 HOSTNAME=Docker
 
-RUNNING=$$(docker ps | grep $(CONTAINER_NAME) | awk '{print $$1}')
-BACKRUNNING=$$(docker ps -a | grep $(CONTAINER_NAME) | awk '{print $$1}')
-BUILDED=$$(docker images | grep $(IMAGE_NAME))
+# docker params to build the image
+BUILD_PARAMS=-t
 
-$(VERBOSE).SILENT:
+# docker params to run the container
+RUN_PARAMS=-it -h $(HOSTNAME)
+
+# path where the Dockerfile is
+DOCKERFILE_PATH=.
+
+# docker executable, added if for some reason you have your docker exec file somewhere else
+DOCKER_EXEC=docker
+
+
+######################################
+############ System calls ############
+######################################
+
+RUNNING=$$($(DOCKER_EXEC) ps | grep $(CONTAINER_NAME) | awk '{print $$1}')
+BACKRUNNING=$$($(DOCKER_EXEC) -a | grep $(CONTAINER_NAME) | awk '{print $$1}')
+BUILDED=$$($(DOCKER_EXEC) images | grep $(IMAGE_NAME))
+
+
+######################################
+############ Make targets ############
+######################################
 
 build:
 	DPID=$(call BUILDED); \
 	if [ ! "$$DPID" ]; then \
-		docker build -t $(IMAGE_NAME) .; \
+		$(DOCKER_EXEC) build $(BUILD_PARAMS) $(IMAGE_NAME) $(DOCKERFILE_PATH); \
 	fi
 
 run:
@@ -27,7 +54,7 @@ run:
 	if [ ! "$$DPID" ]; then \
 		DPID=$(call RUNNING); \
 		if [ ! "$$DPID" ]; then \
-			docker run -it -h $(HOSTNAME) --name $(CONTAINER_NAME) $(IMAGE_NAME); \
+			$(DOCKER_EXEC) run $(RUN_PARAMS) --name $(CONTAINER_NAME) $(IMAGE_NAME); \
 		fi; \
 	fi
 
@@ -40,19 +67,19 @@ attach:
 		if [ ! "$$DPID" ]; then \
 			${MAKE} start; \
 		fi; \
-		docker attach $(CONTAINER_NAME); \
+		$(DOCKER_EXEC) attach $(CONTAINER_NAME); \
 	fi
 
 rmi:
 	DPID=$(call BUILDED); \
 	if [ "$$DPID" ]; then \
-		docker rmi $(IMAGE_NAME); \
+		$(DOCKER_EXEC) rmi $(IMAGE_NAME); \
 	fi
 
 rm:
 	DPID=$(call BACKRUNNING); \
 	if [ "$$DPID" ]; then \
-		docker rm $(CONTAINER_NAME); \
+		$(DOCKER_EXEC) rm $(CONTAINER_NAME); \
 	fi
 
 clean:
@@ -62,11 +89,11 @@ clean:
 start:
 	DPID=$(call RUNNING); \
 	if [ ! "$$DPID" ]; then \
-		docker start $(CONTAINER_NAME); \
+		$(DOCKER_EXEC) start $(CONTAINER_NAME); \
 	fi
 
 stop:
 	DPID=$(call RUNNING); \
 	if [ "$$DPID" ]; then \
-		docker stop $(CONTAINER_NAME); \
+		$(DOCKER_EXEC) stop $(CONTAINER_NAME); \
 	fi
