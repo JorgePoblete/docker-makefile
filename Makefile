@@ -34,7 +34,7 @@ DOCKER_EXEC=docker
 ######################################
 
 RUNNING=$$($(DOCKER_EXEC) ps | grep $(CONTAINER_NAME) | awk '{print $$1}')
-BACKRUNNING=$$($(DOCKER_EXEC) -a | grep $(CONTAINER_NAME) | awk '{print $$1}')
+BACKRUNNING=$$($(DOCKER_EXEC) ps -a | grep $(CONTAINER_NAME) | awk '{print $$1}')
 BUILDED=$$($(DOCKER_EXEC) images | grep $(IMAGE_NAME))
 
 
